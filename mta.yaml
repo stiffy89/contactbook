@@ -1,0 +1,144 @@
+_schema-version: "3.1"
+ID: contactbook
+description: A simple CAP project.
+version: 1.0.0
+modules:
+
+- name: contactbook-srv
+  type: nodejs
+  path: gen/srv
+  requires:
+  - name: contactbook-uaa
+  - name: contactbook-db
+  - name: contactbook-destination
+  provides:
+  - name: srv-api
+    properties:
+      srv-url: ${default-url}
+  parameters:
+    buildpack: nodejs_buildpack
+  build-parameters:
+    builder: npm
+
+- name: contactbook-db-deployer
+  type: hdb
+  path: gen/db
+  requires:
+  - name: contactbook-db
+  parameters:
+    buildpack: nodejs_buildpack
+
+- name: contactbook-destinations
+  type: com.sap.application.content
+  requires:
+  - name: contactbook-uaa
+    parameters:
+      service-key:
+        name: contactbook-uaa-key
+  - name: contactbook-html5-repo-host
+    parameters:
+      service-key:
+        name: contactbook-html5-repo-host-key
+  - name: srv-api
+  - name: contactbook-destination
+    parameters:
+      content-target: true
+  parameters:
+    content:
+      instance:
+        destinations:
+        - Authentication: OAuth2UserTokenExchange
+          Name: contactbook-app-srv
+          TokenServiceInstanceName: contactbook-uaa
+          TokenServiceKeyName: contactbook-uaa-key
+          URL: ~{srv-api/srv-url}
+          sap.cloud.service: contactbook.service
+        - Name: contactbook-html5-repo-host
+          ServiceInstanceName: contactbook-html5-repo-host
+          ServiceKeyName: contactbook-html5-repo-host-key
+          sap.cloud.service: contactbook.service
+        - Authentication: OAuth2UserTokenExchange
+          Name: contactbook-uaa
+          ServiceInstanceName: contactbook-uaa
+          ServiceKeyName: contactbook-uaa-key
+          sap.cloud.service: contactbook.service
+        existing_destinations_policy: update
+  build-parameters:
+    no-source: true
+
+- name: contactbook-app-content
+  type: com.sap.application.content
+  path: .
+  requires:
+  - name: contactbook-html5-repo-host
+    parameters:
+      content-target: true
+  build-parameters:
+    build-result: resources
+    requires:
+    - artifacts:
+      - nscontactbookapp.zip
+      name: nscontactbookapp
+      target-path: resources/
+
+- name: nscontactbookapp
+  type: html5
+  path: app/contactbookapp
+  build-parameters:
+    build-result: dist
+    builder: custom
+    commands:
+    - npm install
+    - npm run build:cf
+    supported-platforms: []
+
+resources:
+
+- name: contactbook-html5-repo-host
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: html5-apps-repo
+    service-plan: app-host
+
+- name: contactbook-destination
+  type: org.cloudfoundry.managed-service
+  parameters:
+    config:
+      HTML5Runtime_enabled: true
+      init_data:
+        instance:
+          destinations:
+          - Authentication: NoAuthentication
+            Name: ui5
+            ProxyType: Internet
+            Type: HTTP
+            URL: https://ui5.sap.com
+          existing_destinations_policy: update
+    service: destination
+    service-plan: lite
+
+- name: contactbook-uaa
+  type: org.cloudfoundry.managed-service
+  parameters:
+    config:
+      tenant-mode: dedicated
+      xsappname: contactbook-${org}-${space}
+    path: ./xs-security.json
+    service: xsuaa
+    service-plan: application
+    
+- name: contactbook-db
+  type: com.sap.xs.hdi-container
+  parameters:
+    service: hana
+    service-plan: hdi-shared
+
+parameters:
+  deploy_mode: html5-repo
+  enable-parallel-deployments: true
+
+build-parameters:
+  before-all:
+  - builder: custom
+    commands:
+    - npx cds build --production

@@ -1,39 +1,63 @@
 {
-  "name": "contactbook",
-  "version": "1.0.0",
-  "description": "A simple CAP project.",
-  "repository": "<Add your repository here>",
-  "license": "UNLICENSED",
-  "private": true,
-  "dependencies": {
-    "@sap-cloud-sdk/http-client": "^3.5.0",
-    "@sap/cds": "^7",
-    "express": "^4",
-    "sap-cf-axios": "^0.4.10"
-  },
-  "devDependencies": {
-    "@cap-js/sqlite": "^1",
-    "@sap/ux-specification": "^1.108.14"
-  },
-  "scripts": {
-    "start": "cds-serve",
-    "backend": "cds watch --profile backend",
-    "watch-contactbook": "cds watch --open contactbook/webapp/index.html?sap-ui-xx-viewCache=false"
-  },
-  "cds": {
-    "requires": {
-      "contactset": {
-        "kind": "odata-v2",
-        "model": "srv/external/contactset",
-        "[backend]": {
-          "credentials": {
-            "destination": "contacts"
-          }
+    "name": "contactbook",
+    "version": "1.0.0",
+    "description": "A simple CAP project.",
+    "repository": "<Add your repository here>",
+    "license": "UNLICENSED",
+    "private": true,
+    "dependencies": {
+        "@sap-cloud-sdk/http-client": "^3.5.0",
+        "@sap/cds": "^7",
+        "@sap/cds-hana": "^2",
+        "@sap/xssec": "^3",
+        "express": "^4",
+        "passport": "^0",
+        "sap-cf-axios": "^0.4.10"
+    },
+    "engines": {
+        "node": "^16"
+    },
+    "devDependencies": {
+        "@cap-js/sqlite": "^1",
+        "@sap/cds-dk": "^7",
+        "@sap/ux-specification": "^1.108.14",
+        "rimraf": "^3.0.2"
+    },
+    "scripts": {
+        "start": "cds-serve",
+        "backend": "cds watch --profile backend",
+        "watch-contactbook": "cds watch --open contactbook/webapp/index.html?sap-ui-xx-viewCache=false",
+        "undeploy": "cf undeploy contactbook --delete-services --delete-service-keys --delete-service-brokers",
+        "build": "rimraf resources mta_archives && mbt build --mtar archive",
+        "deploy": "cf deploy mta_archives/archive.mtar --retries 1",
+        "watch-contactbookapp": "cds watch --open contactbookapp/webapp/index.html?sap-ui-xx-viewCache=false"
+    },
+    "cds": {
+        "requires": {
+            "contactset": {
+                "kind": "odata-v2",
+                "model": "srv/external/contactset",
+                "csrf": true,
+                "csrfInBatch": true,
+                "[backend]": {
+                    "credentials": {
+                        "destination": "ES5"
+                    }
+                },
+                "[production]": {
+                    "credentials": {
+                        "destination": "ES5"
+                    }
+                }
+            },
+            "[production]": {
+                "auth": "xsuaa",
+                "db": "hana"
+            }
         }
-      }
-    }
-  },
-  "sapux": [
-    "app/contactbook"
-  ]
+    },
+    "sapux": [
+        "app/contactbook",
+        "app/contactbookapp"
+    ]
 }

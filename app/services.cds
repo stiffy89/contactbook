@@ -1,2 +1,1 @@
-
-using from './contactbook/annotations';
+using from './contactbookapp/annotations';
