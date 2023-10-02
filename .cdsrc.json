@@ -1,1 +1,24 @@
-{}
+{
+    "[development]" : {
+        "auth": {
+            "passport" : {
+                "users" : {
+                    "contacts.viewer@test.com" : {
+                        "password" : "password",
+                        "ID" : "contacts.viewer@test.com",
+                        "roles" : [
+                            "viewer"
+                        ]
+                    },
+                    "contacts.manager@test.com" : {
+                        "password" : "password",
+                        "ID" : "contacts.manager@test.com",
+                        "roles" : [
+                            "manager"
+                        ]
+                    }
+                }
+            }
+        }
+    }
+}

@@ -3,7 +3,16 @@ using contactbook from '../db/schema';
 
 service contactbookservice {
 
-    entity Contacts {
+    entity Contacts @(restrict:[
+        {
+            grant : ['READ'],
+            to : ['viewer']
+        },
+        {
+            grant : ['*'],
+            to : ['manager']
+        }
+    ]){
         key ID: UUID;
             FirstName: String(40);
             LastName: String(40);
@@ -17,4 +26,6 @@ service contactbookservice {
             Country: String(10);
             AddressType: String(2);
     }
+
+    annotate Contacts with @odata.draft.enabled;
 }
