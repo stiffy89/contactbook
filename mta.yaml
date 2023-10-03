@@ -123,6 +123,15 @@ resources:
     config:
       tenant-mode: dedicated
       xsappname: contactbook-${org}-${space}
+      role-collections:
+        - name: 'viewer'
+          description: view contacts
+          role-template-references:
+            - $XSAPPNAME.viewer
+        - name: 'manager'
+          description: manage contacts
+          role-template-references:
+            - $XSAPPNAME.manager
     path: ./xs-security.json
     service: xsuaa
     service-plan: application

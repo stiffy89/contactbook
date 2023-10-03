@@ -1,5 +1,31 @@
 {
-  "scopes": [],
+  "scopes": [
+    {
+      "name": "$XSAPPNAME.viewer",
+      "description": "viewer"
+    },
+    {
+      "name": "$XSAPPNAME.manager",
+      "description": "manager"
+    }
+  ],
   "attributes": [],
-  "role-templates": []
+  "role-templates": [
+    {
+      "name": "viewer",
+      "description": "Contacts Viewer",
+      "scope-references": [
+        "$XSAPPNAME.viewer"
+      ],
+      "attribute-references": []
+    },
+    {
+      "name": "manager",
+      "description": "Contacts Manager",
+      "scope-references": [
+        "$XSAPPNAME.manager"
+      ],
+      "attribute-references": []
+    }
+  ]
 }
