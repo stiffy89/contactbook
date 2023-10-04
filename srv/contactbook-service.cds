@@ -14,6 +14,7 @@ service contactbookservice {
         }
     ]){
         key ID: UUID;
+            OriginalID: String(40);
             FirstName: String(40);
             LastName: String(40);
             Gender: String (1);

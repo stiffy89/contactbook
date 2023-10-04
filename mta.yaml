@@ -11,6 +11,7 @@ modules:
   - name: contactbook-uaa
   - name: contactbook-db
   - name: contactbook-destination
+  - name: contactbook-logging
   provides:
   - name: srv-api
     properties:
@@ -141,6 +142,12 @@ resources:
   parameters:
     service: hana
     service-plan: hdi-shared
+
+- name: contactbook-logging
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: application-logs
+    service-plan: lite
 
 parameters:
   deploy_mode: html5-repo

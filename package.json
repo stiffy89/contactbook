@@ -12,7 +12,8 @@
         "@sap/xssec": "^3",
         "express": "^4",
         "passport": "^0",
-        "sap-cf-axios": "^0.4.10"
+        "sap-cf-axios": "^0.4.10",
+        "cf-nodejs-logging-support": "^6"
     },
     "engines": {
         "node": "^16"

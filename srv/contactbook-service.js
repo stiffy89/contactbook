@@ -2,8 +2,11 @@ const cds = require('@sap/cds');
 const axios = require('axios');
 const sapcfaxios = require('sap-cf-axios').default;
 const destinationaxios = sapcfaxios("ES5");
+const log = require('cf-nodejs-logging-support');
+log.setLoggingLevel('info');
+log.registerCustomFields(["readData", "updateData"]);
 
-module.exports = cds.service.impl(async function () {
+module.exports = cds.service.impl(async function (req,res,next) {
 
 	const contactsService = await cds.connect.to('contactset');
 
@@ -54,27 +57,60 @@ module.exports = cds.service.impl(async function () {
 		});
 	} */
 
+	this.on('DELETE', 'Contacts', async (req, next) => {
+		let data = req.data;
+		let sPath = "/sap/opu/odata/iwbep/GWSAMPLE_BASIC/ContactSet(guid'" + data.OriginalID + "')"; 
+
+		let externalRes = await contactsService.send({
+			method: 'DELETE',
+			path: sPath
+		});
+
+		return next();
+	})
+
 
 	this.on('UPDATE', 'Contacts', async (req, next) => {
+		//remap the data coming through to its original format
+		log.info('Updating data');
+		let data = req.data;
+
+		let oOriginalDataObj = {
+			ContactGuid : data.OriginalID,
+			Sex : data.Gender,
+			FirstName : data.FirstName,
+			PhoneNumber : data.PhoneNumber,
+			EmailAddress : data.EmailAddress,
+			Address: {
+				City : data.City,
+				PostalCode : data.PostalCode,
+				Street : data.Street,
+				Building : data.Building,
+				Country : data.Country,
+				AddressType : data.AddressType
+			}
+		};
+		
+
+		let sPath = "/sap/opu/odata/iwbep/GWSAMPLE_BASIC/ContactSet(guid'" + oOriginalDataObj.ContactGuid + "')"; 
+
+		let externalRes = await contactsService.send({
+			method: 'PUT',
+			path: sPath,
+			data: oOriginalDataObj
+		});
+
+		log.info("data updated", {"updateData":oOriginalDataObj});
+
+		return next();
 
 	})
 
 	//using external service
 	this.on('READ', 'Contacts', async (req, next) => {
-		//do a read on the contacts service
-		/*	let oSanitisedReq = reqSanitiser(req);
-			let extContactsResults = await contactsService.run(oSanitisedReq);
-			let localContactsResults = await SELECT.from(Contacts);
-	
-			if (localContactsResults.length == 0){
-				//first read
-				await srv.create(Contacts).entries(extContactsResults).then(() => {
-					return next();
-				})
-			} else {
-				return next();
-			} */
+		//we can actually get the roles of the logged in user here by looking at req.user from the request coming through
 
+		log.info('Reading Data');
 		
 		let externalRes = await contactsService.send({
 			method: 'GET',
@@ -101,6 +137,7 @@ module.exports = cds.service.impl(async function () {
 			externalData = externalData.map((x) => {
 				let oNewObj = {};
 				oNewObj.ID = x.ContactGuid;
+				oNewObj.OriginalID = x.ContactGuid;
 				oNewObj.FirstName = x.FirstName;
 				oNewObj.LastName = x.LastName;
 				oNewObj.Gender = x.Sex;
@@ -115,8 +152,9 @@ module.exports = cds.service.impl(async function () {
 				return oNewObj;
 			});
 
-			console.log(externalData);
+			
 			await srv.create(Contacts).entries(externalData).then(() => {
+				log.info('external data has been read', {'readData':externalData});
 				return next();
 			})
 		} else {
