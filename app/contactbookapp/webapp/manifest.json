@@ -148,7 +148,11 @@
         },
         "extends": {
             "extensions": {
-                "sap.ui.controllerExtensions": {}
+                "sap.ui.controllerExtensions": {
+                    "sap.fe.templates.ObjectPage.ObjectPageController": {
+                        "controllerName": "ns.contactbookapp.ext.controller.DetailPage"
+                    }
+                }
             }
         },
         "rootView": {

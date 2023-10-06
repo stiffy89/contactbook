@@ -13,11 +13,10 @@ service contactbookservice {
             to : ['manager']
         }
     ]){
-        key ID: UUID;
-            OriginalID: String(40);
+        key ContactGuid: UUID;
             FirstName: String(40);
             LastName: String(40);
-            Gender: String (1);
+            Sex: String (1);
             PhoneNumber: String(30);
             EmailAddress: String(255);
             City: String(40);

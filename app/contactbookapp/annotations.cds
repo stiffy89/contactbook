@@ -41,12 +41,6 @@ annotate service.Contacts with @(
             ID : 'PersonalInformation',
             Target : '@UI.FieldGroup#PersonalInformation',
         },
-        {
-            $Type : 'UI.ReferenceFacet',
-            Label : 'Address Information',
-            ID : 'AddressInformation',
-            Target : '@UI.FieldGroup#AddressInformation',
-        },
     ],
     UI.FieldGroup #PersonalInformation : {
         $Type : 'UI.FieldGroupType',

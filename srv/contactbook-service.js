@@ -59,7 +59,7 @@ module.exports = cds.service.impl(async function (req,res,next) {
 
 	this.on('DELETE', 'Contacts', async (req, next) => {
 		let data = req.data;
-		let sPath = "/sap/opu/odata/iwbep/GWSAMPLE_BASIC/ContactSet(guid'" + data.OriginalID + "')"; 
+		let sPath = "/sap/opu/odata/iwbep/GWSAMPLE_BASIC/ContactSet(guid'" + data.ID + "')"; 
 
 		let externalRes = await contactsService.send({
 			method: 'DELETE',
@@ -92,7 +92,7 @@ module.exports = cds.service.impl(async function (req,res,next) {
 		};
 		
 
-		let sPath = "/sap/opu/odata/iwbep/GWSAMPLE_BASIC/ContactSet(guid'" + oOriginalDataObj.ContactGuid + "')"; 
+		let sPath = "/sap/opu/odata/iwbep/GWSAMPLE_BASIC/ContactSet(guid'" + data.OriginalID + "')"; 
 
 		let externalRes = await contactsService.send({
 			method: 'PUT',
@@ -104,22 +104,55 @@ module.exports = cds.service.impl(async function (req,res,next) {
 
 		return next();
 
+	});
+
+	
+
+	this.on('EDIT', 'Contacts', async(req, next) => {
+		return next();
 	})
+
+	this.on('NEW', 'Contacts.drafts', async(req, next) => {
+		console.log(req);
+		return next();
+	})
+
+	this.on('READ', 'Contacts.drafts', async(req, next) => {
+		let draftResults = await SELECT.from(Contacts.drafts);
+		return next();
+	});
 
 	//using external service
 	this.on('READ', 'Contacts', async (req, next) => {
 		//we can actually get the roles of the logged in user here by looking at req.user from the request coming through
 
 		log.info('Reading Data');
+
+		//check to see what the request is and re-map the query
+		let oSelectQuery = req.query.SELECT;
+		let sBaseUrl = "/sap/opu/odata/iwbep/GWSAMPLE_BASIC/ContactSet";
+
+		if (typeof(oSelectQuery.from.ref[0]) == 'object' && oSelectQuery.from.ref[0].id == 'contactbookservice.Contacts') {
+			let oWhereClause = oSelectQuery.from.ref[0].where;
+			if (oWhereClause[0].ref[0] == 'ContactGuid' && oWhereClause[1] == '='){
+				sBaseUrl += ("(guid'" + oWhereClause[2].val + "')")
+			}
+		}
+		else if (oSelectQuery.from.ref[0] == 'contactbookservice.Contacts'){
+			sBaseUrl += "?$inlinecount=allpages";
+		}
+		else {
+			return next();
+		}
+
+
 		
 		let externalRes = await contactsService.send({
 			method: 'GET',
-			path: '/sap/opu/odata/iwbep/GWSAMPLE_BASIC/ContactSet',
-			headers: {
-				"content-type": "application/json",
-				'X-CSRF-Token': "fetch"
-			}
+			path: sBaseUrl
 		});
+
+		//return externalRes;
 
 		let localRes = await SELECT.from(Contacts);
 
@@ -131,12 +164,14 @@ module.exports = cds.service.impl(async function (req,res,next) {
 			})
 		}
 
+
+
 		//check to see if we have any new records in this list
 		if (localRes.length == 0) {
-			//get the address data in the externalData and flatten it
+			
 			externalData = externalData.map((x) => {
 				let oNewObj = {};
-				oNewObj.ID = x.ContactGuid;
+				oNewObj.ContactGuid = x.ContactGuid;
 				oNewObj.OriginalID = x.ContactGuid;
 				oNewObj.FirstName = x.FirstName;
 				oNewObj.LastName = x.LastName;
@@ -159,6 +194,7 @@ module.exports = cds.service.impl(async function (req,res,next) {
 			})
 		} else {
 			return next();
-		}
+		} 
+
 	});
 });
