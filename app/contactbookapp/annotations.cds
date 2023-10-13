@@ -47,7 +47,7 @@ annotate service.Contacts with @(
         Data : [
             {
                 $Type : 'UI.DataField',
-                Value : Gender,
+                Value : Sex,
                 Label : 'Gender',
             },{
                 $Type : 'UI.DataField',

@@ -57,10 +57,41 @@ module.exports = cds.service.impl(async function (req,res,next) {
 		});
 
 		return next();
+	});
+
+	this.before('EDIT', 'Contacts', async(data) => {
+		const results = await SELECT.from(Contacts);
+		console.log(results);
+	});
+
+	this.after('EDIT', 'Contacts', async(data) => {
+		//check to see if we have the existing record in persistence, if not, create it
+		const existingRecord = await SELECT.from(Contacts).where({ContactGuid : data.ContactGuid});
+		if (existingRecord.length == 0){
+			let aFilteredItems = [
+			"IsActiveEntity",
+			"SiblingEntity",
+			"DraftAdministrativeData_DraftUUID",
+			"DraftAdministrativeData",
+			"HasDraftEntity",
+			"HasActiveEntity",
+			"uuid"];
+	
+			let aKeys = Object.keys(data);
+			let oNewObj = {};
+			for (var i in aKeys){
+				if (!aFilteredItems.includes(aKeys[i])){
+					oNewObj[aKeys[i]] = data[aKeys[i]]
+				}
+			}
+	
+			await srv.create(Contacts).entries(oNewObj);
+		}
 	})
 
 
 	this.on('UPDATE', 'Contacts', async (req, next) => {
+		
 		//remap the data coming through to its original format
 		let data = req.data;
 
@@ -68,6 +99,7 @@ module.exports = cds.service.impl(async function (req,res,next) {
 			ContactGuid : data.ContactGuid,
 			Sex : data.Sex,
 			FirstName : data.FirstName,
+			LastName : data.LastName,
 			PhoneNumber : data.PhoneNumber,
 			EmailAddress : data.EmailAddress,
 			Address: {
@@ -80,7 +112,6 @@ module.exports = cds.service.impl(async function (req,res,next) {
 			}
 		};
 		
-
 		let sPath = "/sap/opu/odata/iwbep/GWSAMPLE_BASIC/ContactSet(guid'" + data.ContactGuid + "')"; 
 
 		let externalRes = await contactsService.send({
@@ -90,11 +121,18 @@ module.exports = cds.service.impl(async function (req,res,next) {
 		});
 
 		return next();
-
 	});
 
-	this.on('EDIT', 'Contacts', async(req, next) => {
-		return next(); 
+	this.after('UPDATE', 'Contacts', async(data) => {
+		const existingRecord = await SELECT.from(Contacts).where({ContactGuid : data.ContactGuid});
+		if (existingRecord.length > 0){
+			await DELETE.from(Contacts).where({ContactGuid : data.ContactGuid})
+		}
+	});
+
+	this.after('SAVE', 'Contacts', async()=> {
+		const results = await SELECT.from(Contacts);
+		console.log(results);
 	});
 
 	this.on('READ', 'Contacts.drafts', async(req, next) => {
@@ -107,25 +145,11 @@ module.exports = cds.service.impl(async function (req,res,next) {
 	this.on('READ', 'Contacts', async (req, next) => {
 		//we can actually get the roles of the logged in user here by looking at req.user from the request coming through
 		//check to see what the request is and re-map the query
-		let oSelectQuery = req.query.SELECT;
+
+		//const tx = cds.tx();
+		//let dbResults = await tx.run(req);
+	
 		let sBaseUrl = "/sap/opu/odata/iwbep/GWSAMPLE_BASIC/ContactSet";
-
-		/* if (req.params.length == 0){
-			//check the select query to see if we have any where clauses
-			if (req.query.SELECT.where){
-
-			} else {
-				sBaseUrl += "?$inlinecount=allpages";
-			}
-		} else {
-			for (var i in req.params){
-				let aKeys = Object.keys(req.params[i]);
-				if (aKeys[0] == 'ContactGuid'){
-					sBaseUrl += ("(guid'" + req.params[i].ContactGuid + "')")
-				}
-			}
-		} */
-
 		let oQuery = req.query.SELECT;
 		if (typeof(oQuery.from.ref[0]) == 'string' && !oQuery.where){
 			sBaseUrl += "?$inlinecount=allpages";
@@ -137,9 +161,6 @@ module.exports = cds.service.impl(async function (req,res,next) {
 			sBaseUrl += ("(guid'" + oQuery.where[2].val + "')");
 		}
 
-
-
-		
 
 		/* if (typeof(oSelectQuery.from.ref[0]) == 'object' && oSelectQuery.from.ref[0].id == 'contactbookservice.Contacts') {
 			let oWhereClause = oSelectQuery.from.ref[0].where;
@@ -157,19 +178,61 @@ module.exports = cds.service.impl(async function (req,res,next) {
 		}); */
 
 		let externalRes = await readContactsDestination(sBaseUrl);
-		console.log(externalRes);
-		return externalRes;
+
+		//need to check if the result is an array or just one obj
+		let bIsArray = Array.isArray(externalRes);
+		let externalData;
+		if (bIsArray){
+			externalData = externalRes.map((x) => {
+				console.log(x)
+				let oNewObj = {};
+				oNewObj.ContactGuid = x.ContactGuid;
+				oNewObj.FirstName = x.FirstName;
+				oNewObj.LastName = x.LastName;
+				oNewObj.Sex = x.Sex;
+				oNewObj.PhoneNumber = x.PhoneNumber;
+				oNewObj.EmailAddress = x.EmailAddress;
+				oNewObj.City = x.Address.City;
+				oNewObj.PostalCode = x.Address.PostalCode;
+				oNewObj.Street = x.Address.Street;
+				oNewObj.Building = x.Address.Building;
+				oNewObj.Country = x.Address.Country;
+				oNewObj.AddressType = x.Address.AddressType;
+				return oNewObj;
+			});
+			//externalData.$count = externalData.length;
+		} else {
+			externalData = {};
+			externalData.ContactGuid = externalRes.ContactGuid;
+			externalData.FirstName = externalRes.FirstName;
+			externalData.LastName = externalRes.LastName;
+			externalData.Sex = externalRes.Sex;
+			externalData.PhoneNumber = externalRes.PhoneNumber;
+			externalData.EmailAddress = externalRes.EmailAddress;
+			externalData.City = externalRes.Address.City;
+			externalData.PostalCode = externalRes.Address.PostalCode;
+			externalData.Street = externalRes.Address.Street;
+			externalData.Building = externalRes.Address.Building;
+			externalData.Country = externalRes.Address.Country;
+			externalData.AddressType = externalRes.Address.AddressType;
+		}
+
+		return externalData;
+
+		/* await srv.create(Contacts).entries(externalData).then(() => {
+			return next();
+		}) */
+
+		//return externalData;
 
 		let localRes = await SELECT.from(Contacts);
-
-		let externalData;
 
 		if (externalRes.length > 0){
 			externalData = externalRes.filter((x) => {
 				return !(/\d/.test(x.LastName));
 			})
 		}
-		
+
 
 		//check to see if we have any new records in this list
 		if (localRes.length == 0) {

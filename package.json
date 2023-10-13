@@ -26,7 +26,7 @@
     },
     "scripts": {
         "start": "cds-serve",
-        "backend": "cds watch --profile backend",
+        "backend": "cds watch --port 4001 --profile backend",
         "watch-contactbook": "cds watch --open contactbook/webapp/index.html?sap-ui-xx-viewCache=false",
         "undeploy": "cf undeploy contactbook --delete-services --delete-service-keys --delete-service-brokers",
         "build": "rimraf resources mta_archives && mbt build --mtar archive",
