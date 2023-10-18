@@ -1,0 +1,1 @@
+sap.ui.define(["sap/ui/core/mvc/ControllerExtension"],function(e){"use strict";return e.extend("ns.contactbookapp.ext.controller.DetailPage",{override:{onInit:function(){var e=this.base.getExtensionAPI().getModel()},onBeforeEdit:function(e){console.log(e.context)}}})});

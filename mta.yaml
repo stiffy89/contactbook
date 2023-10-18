@@ -9,7 +9,6 @@ modules:
   path: gen/srv
   requires:
   - name: contactbook-uaa
-  - name: contactbook-db
   - name: contactbook-destination
   - name: contactbook-logging
   provides:
@@ -20,14 +19,7 @@ modules:
     buildpack: nodejs_buildpack
   build-parameters:
     builder: npm
-
-- name: contactbook-db-deployer
-  type: hdb
-  path: gen/db
-  requires:
-  - name: contactbook-db
-  parameters:
-    buildpack: nodejs_buildpack
+    ignore: ["node_modules/"]
 
 - name: contactbook-destinations
   type: com.sap.application.content
@@ -136,12 +128,7 @@ resources:
     path: ./xs-security.json
     service: xsuaa
     service-plan: application
-    
-- name: contactbook-db
-  type: com.sap.xs.hdi-container
-  parameters:
-    service: hana
-    service-plan: hdi-shared
+  
 
 - name: contactbook-logging
   type: org.cloudfoundry.managed-service

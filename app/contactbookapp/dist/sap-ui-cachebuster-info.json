@@ -1,8 +1,10 @@
 {
-  "Component-preload.js": 1696392121610,
-  "manifest.json": 1696392121305,
-  "Component.js": 1695860926804,
-  "i18n/i18n.properties": 1695860926808,
-  "Component-dbg.js": 1695860926804,
-  "index.html": 1695860926804
+  "Component-dbg.js": 1696920484364,
+  "manifest.json": 1697186051502,
+  "ext/controller/DetailPage.controller.js": 1696920484364,
+  "Component.js": 1696920484364,
+  "Component-preload.js": 1697186051807,
+  "i18n/i18n.properties": 1696920484364,
+  "ext/controller/DetailPage-dbg.controller.js": 1696920484364,
+  "index.html": 1696920484364
 }

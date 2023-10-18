@@ -13,7 +13,8 @@
         "cf-nodejs-logging-support": "^6",
         "express": "^4",
         "passport": "^0",
-        "sap-cf-axios": "^0.4.10"
+        "sap-cf-axios": "^0.4.10",
+        "sqlite3": "^5.0.2"
     },
     "engines": {
         "node": "^16"
@@ -53,8 +54,16 @@
             },
             "[production]": {
                 "auth": "xsuaa",
-                "db": "hana"
+                "db": {
+                    "kind": "sqlite",
+                    "credentials": {
+                      "database": ":memory:"
+                    }
+                }
             }
+        },
+        "features": {
+            "in_memory_db": true
         }
     },
     "sapux": [
